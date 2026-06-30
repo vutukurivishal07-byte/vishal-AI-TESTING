@@ -1,0 +1,18 @@
+# Secrets and local config - DO NOT COMMIT
+.ssh/
+.config/
+.cache/
+.local/
+.npm/
+.ngrok/
+.vscode-server/
+.claude/
+.claude.json
+.opencode/
+.Xauthority
+.bash_history
+.bashrc
+.profile
+.wget-hsts
+node_modules/
+*.log

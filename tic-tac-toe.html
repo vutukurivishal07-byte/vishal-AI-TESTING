@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tic Tac Toe</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #1a1a2e;
+}
+.game {
+  text-align: center;
+}
+h1 {
+  color: #e0e0e0;
+  margin-bottom: 20px;
+  font-size: 2rem;
+}
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 100px);
+  grid-template-rows: repeat(3, 100px);
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #16213e;
+  border: 2px solid #0f3460;
+  border-radius: 12px;
+  font-size: 3rem;
+  font-weight: bold;
+  color: #e94560;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+.cell:hover { background: #1a2747; }
+.cell:active { transform: scale(0.95); }
+.cell.taken { cursor: default; }
+.cell.x { color: #e94560; }
+.cell.o { color: #53d8fb; }
+.status {
+  font-size: 1.3rem;
+  color: #e0e0e0;
+  margin-bottom: 16px;
+  min-height: 2rem;
+}
+button {
+  padding: 10px 32px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #e94560;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+button:hover { background: #d63851; }
+.scoreboard {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 20px;
+  color: #e0e0e0;
+  font-size: 1.1rem;
+}
+.scoreboard span { font-weight: bold; }
+.scoreboard .x-score { color: #e94560; }
+.scoreboard .o-score { color: #53d8fb; }
+</style>
+</head>
+<body>
+<div class="game">
+  <h1>Tic Tac Toe</h1>
+  <div class="scoreboard">
+    <div>X <span class="x-score" id="xScore">0</span></div>
+    <div>Draws <span id="drawScore">0</span></div>
+    <div>O <span class="o-score" id="oScore">0</span></div>
+  </div>
+  <div class="board" id="board"></div>
+  <div class="status" id="status">X's turn</div>
+  <button id="reset">New Game</button>
+</div>
+<script>
+const boardEl = document.getElementById('board');
+const statusEl = document.getElementById('status');
+const xScoreEl = document.getElementById('xScore');
+const oScoreEl = document.getElementById('oScore');
+const drawScoreEl = document.getElementById('drawScore');
+
+let board = Array(9).fill(null);
+let currentPlayer = 'X';
+let gameOver = false;
+let scores = { X: 0, O: 0, draws: 0 };
+
+const winPatterns = [
+  [0,1,2], [3,4,5], [6,7,8],
+  [0,3,6], [1,4,7], [2,5,8],
+  [0,4,8], [2,4,6]
+];
+
+function checkWinner() {
+  for (const [a,b,c] of winPatterns) {
+    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+      return board[a];
+    }
+  }
+  return board.every(cell => cell !== null) ? 'draw' : null;
+}
+
+function handleClick(i) {
+  if (board[i] || gameOver) return;
+  board[i] = currentPlayer;
+  render();
+  const result = checkWinner();
+  if (result) {
+    gameOver = true;
+    if (result === 'draw') {
+      scores.draws++;
+      statusEl.textContent = "It's a draw!";
+    } else {
+      scores[result]++;
+      statusEl.textContent = `${result} wins!`;
+    }
+    updateScoreboard();
+  } else {
+    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    statusEl.textContent = `${currentPlayer}'s turn`;
+  }
+}
+
+function render() {
+  boardEl.innerHTML = '';
+  for (let i = 0; i < 9; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell' + (board[i] ? ` taken ${board[i].toLowerCase()}` : '');
+    cell.textContent = board[i] || '';
+    cell.addEventListener('click', () => handleClick(i));
+    boardEl.appendChild(cell);
+  }
+}
+
+function updateScoreboard() {
+  xScoreEl.textContent = scores.X;
+  oScoreEl.textContent = scores.O;
+  drawScoreEl.textContent = scores.draws;
+}
+
+function resetGame() {
+  board = Array(9).fill(null);
+  currentPlayer = 'X';
+  gameOver = false;
+  statusEl.textContent = "X's turn";
+  render();
+}
+
+document.getElementById('reset').addEventListener('click', resetGame);
+resetGame();
+</script>
+</body>
+</html>
