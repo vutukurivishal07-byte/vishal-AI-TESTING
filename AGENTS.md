@@ -33,3 +33,7 @@ Git is initialized in `/root` (not a project subdir). Push target: `github.com/v
 
 - Do not commit local/sensitive dirs from `/root`. The `.gitignore` excludes `.ssh/`, `.config/`, `.cache/`, `.claude/`, `.vscode-server/`, `.opencode/`, `.local/`, `.npm/`, shell history, and `node_modules/`. Keep it that way.
 - There is no test suite, linter, or typechecker — verification is manual (open in browser).
+
+## Skills
+
+- Whenever the user asks to create, improve, optimize, rewrite, or engineer a prompt (or says "prompt optimization", "claude prompt", "chatgpt prompt", etc.), follow the prompt-optimizer skill at `~/.config/opencode/skills/prompt-optimizer/SKILL.md`. Load and apply its full workflow (Discovery, Prompt Diagnosis, Optimization Framework, Model Optimization, Prompt Architecture, Prompt Review, Edge Cases, Multi-Version Generation, Prompt Testing, Output Standards) before delivering the prompt.
