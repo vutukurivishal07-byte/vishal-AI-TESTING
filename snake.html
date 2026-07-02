@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Neon Snake</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { -webkit-tap-highlight-color: transparent; }
 body {
   background: #0a0a1a;
   display: flex;
@@ -15,23 +16,27 @@ body {
   overflow: hidden;
   font-family: 'Courier New', monospace;
   color: #fff;
+  touch-action: none;
 }
 #wrap {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
 }
 #ui {
   display: flex;
-  gap: 28px;
-  margin-bottom: 14px;
+  gap: 18px;
+  margin-bottom: 12px;
   font-size: 1rem;
   letter-spacing: 2px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 #ui span {
   background: rgba(0,0,0,0.5);
-  padding: 6px 18px;
+  padding: 6px 16px;
   border-radius: 6px;
   border: 1px solid rgba(0,255,170,0.25);
   text-shadow: 0 0 10px rgba(0,255,170,0.4);
@@ -42,6 +47,10 @@ canvas {
   border-radius: 14px;
   border: 2px solid rgba(0,255,170,0.18);
   box-shadow: 0 0 40px rgba(0,255,170,0.12), inset 0 0 60px rgba(0,0,0,0.5);
+  width: min(600px, 95vw);
+  max-height: 72vh;
+  aspect-ratio: 1 / 1;
+  touch-action: none;
 }
 #overlay {
   position: absolute;
@@ -50,20 +59,31 @@ canvas {
   text-align: center;
   z-index: 10;
   pointer-events: none;
+  width: 90%;
 }
 #overlay .title {
-  font-size: 2.4rem;
+  font-size: clamp(1.8rem, 7vw, 2.4rem);
   letter-spacing: 6px;
   text-shadow: 0 0 30px rgba(0,255,170,0.6);
   margin-bottom: 8px;
 }
 #overlay .sub {
-  font-size: 1rem;
+  font-size: clamp(0.85rem, 3.5vw, 1rem);
   letter-spacing: 2px;
   color: #9fb;
   text-shadow: 0 0 14px rgba(0,255,170,0.3);
-  margin-bottom: 22px;
+  margin-bottom: 16px;
 }
+#credit {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: clamp(0.9rem, 4vw, 1.25rem);
+  letter-spacing: 1px;
+  color: #ffd24a;
+  text-shadow: 0 0 18px rgba(255,210,74,0.5), 0 0 6px rgba(255,210,74,0.3);
+  margin-bottom: 24px;
+}
+#credit span { color: #fff; font-weight: bold; }
 #overlay button {
   pointer-events: all;
   padding: 12px 44px;
@@ -83,10 +103,12 @@ canvas {
   box-shadow: 0 0 20px rgba(0,255,170,0.4);
 }
 #hint {
-  margin-top: 14px;
+  margin-top: 12px;
   font-size: 0.8rem;
   letter-spacing: 1px;
   color: rgba(159,255,187,0.55);
+  text-align: center;
+  padding: 0 10px;
 }
 #hint kbd {
   background: rgba(0,255,170,0.12);
@@ -95,6 +117,10 @@ canvas {
   padding: 1px 8px;
   font-family: inherit;
   color: #00ffaa;
+}
+@media (max-width: 600px) {
+  #ui { gap: 10px; font-size: 0.85rem; }
+  #ui span { padding: 4px 12px; }
 }
 </style>
 </head>
@@ -108,10 +134,11 @@ canvas {
   <canvas id="game"></canvas>
   <div id="overlay">
     <div class="title" id="oTitle">NEON SNAKE</div>
-    <div class="sub" id="oSub">Use arrow keys to move</div>
+    <div class="sub" id="oSub">Arrow keys or swipe to move</div>
+    <div id="credit">Developed by <span>Vutukuri Vishal</span></div>
     <button id="startBtn">START</button>
   </div>
-  <div id="hint">Move with <kbd>&uarr;</kbd> <kbd>&darr;</kbd> <kbd>&larr;</kbd> <kbd>&rarr;</kbd> &nbsp;|&nbsp; Eat fruit to grow &amp; change color</div>
+  <div id="hint">Move with <kbd>&uarr;</kbd> <kbd>&darr;</kbd> <kbd>&larr;</kbd> <kbd>&rarr;</kbd> or swipe &nbsp;|&nbsp; Eat fruit to grow &amp; change color</div>
 </div>
 <script>
 const canvas = document.getElementById('game');
@@ -119,6 +146,7 @@ const ctx = canvas.getContext('2d');
 const overlay = document.getElementById('overlay');
 const oTitle = document.getElementById('oTitle');
 const oSub = document.getElementById('oSub');
+const credit = document.getElementById('credit');
 const startBtn = document.getElementById('startBtn');
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
@@ -161,7 +189,7 @@ function spawnFruit() {
   fruit = { x: pos.x, y: pos.y, pulse: 0, golden: Math.random() < 0.12 };
 }
 
-// --- Input ---
+// --- Input: keyboard ---
 const keyMap = {
   ArrowUp:    {x:0,y:-1},
   ArrowDown:  {x:0,y:1},
@@ -177,6 +205,31 @@ window.addEventListener('keydown', e => {
   if (nd.x === -dir.x && nd.y === -dir.y) return;
   nextDir = nd;
 });
+
+// --- Input: touch swipe ---
+let touchStartX = 0, touchStartY = 0;
+canvas.addEventListener('touchstart', e => {
+  if (!started) return;
+  const t = e.touches[0];
+  touchStartX = t.clientX;
+  touchStartY = t.clientY;
+  e.preventDefault();
+}, { passive: false });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); }, { passive: false });
+canvas.addEventListener('touchend', e => {
+  if (!started) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchStartX;
+  const dy = t.clientY - touchStartY;
+  const adx = Math.abs(dx), ady = Math.abs(dy);
+  if (adx < 20 && ady < 20) return;
+  let nd;
+  if (adx > ady) nd = dx > 0 ? {x:1,y:0} : {x:-1,y:0};
+  else nd = dy > 0 ? {x:0,y:1} : {x:0,y:-1};
+  if (nd.x === -dir.x && nd.y === -dir.y) return;
+  nextDir = nd;
+  e.preventDefault();
+}, { passive: false });
 
 startBtn.addEventListener('click', () => {
   reset();
